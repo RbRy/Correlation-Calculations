@@ -44,13 +44,14 @@ struct shotData {
 
 struct gpuData {
 	long int *numer_gpu;
+	long int *denom_gpu;
 	long int *photon_bins_gpu;
 	long int *start_and_end_clocks_gpu;
 	int *max_bin_gpu, *pulse_spacing_gpu, *max_pulse_distance_gpu, *photon_bins_length_gpu;
 	int *offset_gpu;
 };
 
-__global__ void calculateCoincidencesGPU_g2(long int *numer, long int *photon_bins, long int *start_and_end_clocks, int *max_bin, int *pulse_spacing, int *max_pulse_distance, int *offset, int *photon_bins_length, int channel_1, int channel_2, int shot_file_num) {
+__global__ void calculateNumeratorGPU_g2(long int *numer, long int *photon_bins, long int *start_and_end_clocks, int *max_bin, int *pulse_spacing, int *max_pulse_distance, int *offset, int *photon_bins_length, int num_channels, int shot_file_num) {
 	//Get numerator step to work on
 	int id = threadIdx.x;
 	int block = blockIdx.x;
@@ -58,193 +59,78 @@ __global__ void calculateCoincidencesGPU_g2(long int *numer, long int *photon_bi
 
 	//Check we're not calculating something out of range
 	if (block * block_size + id < *max_bin * 2 + 1) {
-		int tau = block * block_size + id - (*max_bin);
-		int i = 0;
-		int j = 0;
-		int running_tot = 0;
-		while ((i < photon_bins_length[channel_1 + shot_file_num * max_channels]) && (j < photon_bins_length[channel_2 + shot_file_num * max_channels])) {
-			int dummy_i = 0;
-			int dummy_j = 0;
-			int out_window = 0;
-			//Increment i if we're outside the window of interest
-			out_window = (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] < (*max_bin + *max_pulse_distance * *pulse_spacing + start_and_end_clocks[0 + shot_file_num * 2])) || (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] > (start_and_end_clocks[1 + shot_file_num * 2] - (*max_bin + *max_pulse_distance * *pulse_spacing)));
-			//in_window = (photon_bins[offset[channel_1] + i] < (*max_bin + *max_pulse_distance * *pulse_spacing + start_and_end_clocks[0]));
-			dummy_i += out_window;
-			//Increment i if chan_1 < chan_2
-			dummy_i += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] < (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - tau));
-			//Increment j if chan_1 > chan_2
-			dummy_j += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] > (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - tau));
-			//If we have a common element increment the running_total and increment both i and j
-			dummy_i += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] == (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - tau));
-			dummy_j += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] == (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - tau));
-			running_tot += !out_window && photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] == (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - tau);
-			//running_tot += in_window;
-			i += dummy_i;
-			j += dummy_j;
+		for (int channel_1 = 0; channel_1 < num_channels; channel_1++) {
+			for (int channel_2 = channel_1 + 1; channel_2 < num_channels; channel_2++) {
+				int tau = block * block_size + id - (*max_bin);
+				int i = 0;
+				int j = 0;
+				int running_tot = 0;
+				while ((i < photon_bins_length[channel_1 + shot_file_num * max_channels]) && (j < photon_bins_length[channel_2 + shot_file_num * max_channels])) {
+					int dummy_i = 0;
+					int dummy_j = 0;
+					int out_window = 0;
+					//Increment i if we're outside the window of interest
+					out_window = (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] < (*max_bin + *max_pulse_distance * *pulse_spacing + start_and_end_clocks[0 + shot_file_num * 2])) || (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] > (start_and_end_clocks[1 + shot_file_num * 2] - (*max_bin + *max_pulse_distance * *pulse_spacing)));
+					//in_window = (photon_bins[offset[channel_1] + i] < (*max_bin + *max_pulse_distance * *pulse_spacing + start_and_end_clocks[0]));
+					dummy_i += out_window;
+					//Increment i if chan_1 < chan_2
+					dummy_i += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] < (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - tau));
+					//Increment j if chan_1 > chan_2
+					dummy_j += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] > (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - tau));
+					//If we have a common element increment the running_total and increment both i and j
+					dummy_i += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] == (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - tau));
+					dummy_j += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] == (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - tau));
+					running_tot += !out_window && photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] == (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - tau);
+					//running_tot += in_window;
+					i += dummy_i;
+					j += dummy_j;
+				}
+				numer[block * block_size + id + shot_file_num * (*max_bin * 2 + 1)] += running_tot;
+			}
 		}
-		numer[block * block_size + id + shot_file_num * (*max_bin * 2 + 1)] += running_tot;
 	}
 }
 
-cudaError_t calculateCoincidences(std::vector<long int*> *photon_bins, std::vector<int> *photon_bins_length, long int *numer, long int *denom, int *max_bin, int *pulse_spacing, int *max_pulse_distance, long int *start_and_end_clocks, gpuData *gpu_data) {
-	cudaError_t cudaStatus;
+__global__ void calculateDenominatorGPU_g2(long int *denom, long int *photon_bins, long int *start_and_end_clocks, int *max_bin, int *pulse_spacing, int *max_pulse_distance, int *offset, int *photon_bins_length, int num_channels, int shot_file_num) {
+	//Get denominator step to work on
+	int id = threadIdx.x;
+	int block = blockIdx.x;
+	int block_size = blockDim.x;
 
-	//Initialise numerator to 0
-	//cudaStatus = cudaMemset((*gpu_data).numer_gpu, 0, (2 * (*max_bin) + 1) * sizeof(long int));
-	//if (cudaStatus != cudaSuccess) {
-	//	mexPrintf("cudaMemset failed!\n");
-	//	goto Error;
-	//}
-
-	////Write photon bins to memory
-	//int offset = 0;
-	//for (int i = 0; i < photon_bins_length->size(); i++) {
-	//	cudaStatus = cudaMemcpy((*gpu_data).photon_bins_gpu + offset, (*photon_bins)[i], (*photon_bins_length)[i] * sizeof(long int), cudaMemcpyHostToDevice);
-	//	if (cudaStatus != cudaSuccess) {
-	//		mexPrintf("cudaMemcpy failed!\n");
-	//		goto Error;
-	//	}
-	//	offset += max_tags_length;
-	//}
-	////And other parameters
-	//cudaStatus = cudaMemcpy((*gpu_data).start_and_end_clocks_gpu, start_and_end_clocks, 2 * sizeof(long int), cudaMemcpyHostToDevice);
-	//if (cudaStatus != cudaSuccess) {
-	//	mexPrintf("cudaMemcpy failed!\n");
-	//	goto Error;
-	//}
-	////Can't copy vector to cuda easily
-	//for (int i = 0; i < photon_bins_length->size(); i++) {
-	//	cudaStatus = cudaMemcpy((*gpu_data).photon_bins_length_gpu + i, &((*photon_bins_length)[i]), sizeof(int), cudaMemcpyHostToDevice);
-	//	if (cudaStatus != cudaSuccess) {
-	//		mexPrintf("cudaMemcpy failed!\n");
-	//		goto Error;
-	//	}
-	//}
-	////Figure out how many blocks to chunk the processing up into
-	//int threads_per_block = 1024;
-	//int blocks = 0;
-	//if (threads_per_block >= *max_bin * 2 + 1) {
-	//	blocks = 1;
-	//}
-	//else if (((*max_bin * 2 + 1) % threads_per_block) == 0) {
-	//	blocks = (*max_bin * 2 + 1) / threads_per_block;
-	//}
-	//else {
-	//	blocks = (*max_bin * 2 + 1) / threads_per_block + 1;
-	//}
-
-	////Launch numerator calculating kernel for each set of channels
-	//for (int channel_1 = 0; channel_1 < photon_bins->size(); channel_1++) {
-	//	for (int channel_2 = channel_1 + 1; channel_2 < photon_bins->size(); channel_2++) {
-	//		calculateCoincidencesGPU << <blocks, 1024 >> >((*gpu_data).numer_gpu, (*gpu_data).photon_bins_gpu, (*gpu_data).start_and_end_clocks_gpu, (*gpu_data).max_bin_gpu, (*gpu_data).pulse_spacing_gpu, (*gpu_data).max_pulse_distance_gpu, (*gpu_data).offset_gpu, (*gpu_data).photon_bins_length_gpu, channel_1, channel_2);
-	//	}
-	//}
-	//calculateCoincidencesGPU << <blocks, 1024 >> >(numer_gpu, photon_bins_gpu, start_and_end_clocks_gpu, max_bin_gpu, pulse_spacing_gpu, max_pulse_distance_gpu, offset_gpu, photon_bins_length_gpu, 0, 1);
-
-	//While the numerator is calculating calculate the denominator on the CPU
-	for (int channel_1 = 0; channel_1 < photon_bins->size(); channel_1++) {
-		for (int channel_2 = channel_1 + 1; channel_2 < photon_bins->size(); channel_2++) {
-			//Now do the denominator calculations
-			long int running_denom = 0;
-			int pulse_shift;
-			for (pulse_shift = -*max_pulse_distance; pulse_shift <= *max_pulse_distance; pulse_shift++) {
-				if (pulse_shift != 0) {
+	if (block * block_size + id < (*max_pulse_distance * 2 + 1)) {
+		//Determine the pulse_shift to work on
+		int pulse_shift = block * block_size + id - (*max_pulse_distance);
+		if (pulse_shift != 0) {
+			for (int channel_1 = 0; channel_1 < num_channels; channel_1++) {
+				for (int channel_2 = channel_1 + 1; channel_2 < num_channels; channel_2++) {
 					int i = 0;
 					int j = 0;
-					//Loop until we hit the end of one of our vectors
-					while ((i < (*photon_bins_length)[channel_1]) & (j < (*photon_bins_length)[channel_2])) {
-						//Check if the bin shift will cause an undeflow and increment till it does not
-						if ((pulse_shift*(*pulse_spacing) >(*photon_bins)[channel_2][j]) & (pulse_shift*(*pulse_spacing) > 0)) {
-							j++;
-						}
-						else if (((*photon_bins)[channel_1][i] < (*max_bin + *max_pulse_distance * *pulse_spacing + start_and_end_clocks[0])) || ((*photon_bins)[channel_1][i] > (start_and_end_clocks[1] - (*max_bin + *max_pulse_distance * *pulse_spacing)))) {
-							//printf("%i\t%i\t%i\n", (*photon_bins)[channel_1][i], (*max_bin + *max_pulse_distance * *pulse_spacing + start_and_end_clocks[0]), (start_and_end_clocks[1] - (*max_bin + *max_pulse_distance * *pulse_spacing)));
-							i++;
-						}
-						else {
-							//Abuse the fact that each vector is chronologically ordered to help find common elements quickly
-							if ((*photon_bins)[channel_1][i] > ((*photon_bins)[channel_2][j] - pulse_shift*(*pulse_spacing))) {
-								j++;
-							}
-							else if ((*photon_bins)[channel_1][i] < ((*photon_bins)[channel_2][j] - pulse_shift*(*pulse_spacing))) {
-								i++;
-							}
-							//If there is a common elements increment coincidence counts
-							else if ((*photon_bins)[channel_1][i] == ((*photon_bins)[channel_2][j] - pulse_shift*(*pulse_spacing))) {
-								//See if there are duplicate elements that hold extra coincidences
-								int duplicate_chan_1 = 1;
-								int duplicate_chan_2 = 1;
-								int dummy_i = 1;
-								int dummy_j = 1;
-								bool looking_for_duplciates = true;
-								//First check for duplicates on channel 1
-								while (looking_for_duplciates) {
-									if ((*photon_bins)[channel_1][i] == (*photon_bins)[channel_1][i + dummy_i]) {
-										duplicate_chan_1++;
-										dummy_i++;
-									}
-									else {
-										looking_for_duplciates = false;
-									}
-								}
-								//Then on channel 2
-								looking_for_duplciates = true;
-								while (looking_for_duplciates) {
-									if ((*photon_bins)[channel_2][j] == (*photon_bins)[channel_2][j + dummy_j]) {
-										duplicate_chan_2++;
-										dummy_j++;
-									}
-									else {
-										looking_for_duplciates = false;
-									}
-								}
-								//Increment the running tot by the number of combined coincidences due to duplicates
-								running_denom += duplicate_chan_1 * duplicate_chan_2;
-								//Shift i & j past the duplicates
-								i += dummy_i;
-								j += dummy_j;
-							}
-						}
+					int running_tot = 0;
+					while ((i < photon_bins_length[channel_1 + shot_file_num * max_channels]) && (j < photon_bins_length[channel_2 + shot_file_num * max_channels])) {
+						int dummy_i = 0;
+						int dummy_j = 0;
+						int out_window = 0;
+						//Increment i if we're outside the window of interest
+						out_window = (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] < (*max_bin + *max_pulse_distance * *pulse_spacing + start_and_end_clocks[0 + shot_file_num * 2])) || (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] > (start_and_end_clocks[1 + shot_file_num * 2] - (*max_bin + *max_pulse_distance * *pulse_spacing)));
+						//in_window = (photon_bins[offset[channel_1] + i] < (*max_bin + *max_pulse_distance * *pulse_spacing + start_and_end_clocks[0]));
+						dummy_i += out_window;
+						//Increment i if chan_1 < chan_2
+						dummy_i += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] < (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - pulse_shift*(*pulse_spacing)));
+						//Increment j if chan_1 > chan_2
+						dummy_j += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] > (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - pulse_shift*(*pulse_spacing)));
+						//If we have a common element increment the running_total and increment both i and j
+						dummy_i += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] == (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - pulse_shift*(*pulse_spacing)));
+						dummy_j += !out_window && (photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] == (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - pulse_shift*(*pulse_spacing)));
+						running_tot += !out_window && photon_bins[offset[channel_1 + shot_file_num * max_channels] + i] == (photon_bins[offset[channel_2 + shot_file_num * max_channels] + j] - pulse_shift*(*pulse_spacing));
+						//running_tot += in_window;
+						i += dummy_i;
+						j += dummy_j;
 					}
+					denom[block * block_size + id + shot_file_num * (*max_pulse_distance * 2 + 1)] += running_tot;
 				}
 			}
-			denom[0] += running_denom;
 		}
 	}
-
-	// Check for any errors launching the kernel
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess) {
-		mexPrintf("addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-		goto Error;
-	}
-
-	// cudaDeviceSynchronize waits for the kernel to finish, and returns
-	// any errors encountered during the launch.
-	cudaStatus = cudaDeviceSynchronize();
-	if (cudaStatus != cudaSuccess) {
-		mexPrintf("cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
-		goto Error;
-	}
-
-	// Copy output vector from GPU buffer to host memory.
-	/*cudaStatus = cudaMemcpy(numer, (*gpu_data).numer_gpu, (2 * (*max_bin) + 1) * sizeof(long int), cudaMemcpyDeviceToHost);
-	if (cudaStatus != cudaSuccess) {
-		mexPrintf("cudaMemcpy failed!\n");
-		goto Error;
-	}*/
-Error:
-	cudaFree((*gpu_data).numer_gpu);
-	cudaFree((*gpu_data).offset_gpu);
-	cudaFree(((*gpu_data).max_bin_gpu));
-	cudaFree(((*gpu_data).pulse_spacing_gpu));
-	cudaFree(((*gpu_data).max_pulse_distance_gpu));
-	cudaFree(((*gpu_data).photon_bins_length_gpu));
-	cudaFree((*gpu_data).photon_bins_gpu);
-	cudaFree((*gpu_data).start_and_end_clocks_gpu);
-	cudaDeviceReset();
-
-	return cudaStatus;
 }
 
 //Function grabs all tags and channel list from file
@@ -444,36 +330,6 @@ void printShotChannelBins(shotData *shot_data, int channel) {
 	}
 }
 
-void calculateBlockCoincidences(std::vector<shotData> *shot_block, long int *numer, long int *denom, int *max_bin, int *pulse_spacing, int *max_pulse_distance, gpuData *gpu_data) {
-	for (int shot_file_num = 0; shot_file_num < file_block_size; shot_file_num++) {
-		if ((*shot_block)[shot_file_num].file_load_completed) {
-			int num_channels = (*shot_block)[shot_file_num].channel_list.size();
-			if (num_channels >= 2) {
-
-				std::vector<long int*> photon_bins;
-				long int start_and_end_clocks[2];
-				std::vector<int> photon_bins_length;
-				photon_bins.resize(max_channels);
-				photon_bins_length.resize(max_channels);
-
-				start_and_end_clocks[0] = (*shot_block)[shot_file_num].sorted_clock_bins[1][0];
-				start_and_end_clocks[1] = (*shot_block)[shot_file_num].sorted_clock_bins[0][0];
-				for (int i = 0; i < num_channels; i++) {
-					photon_bins[i] = &((*shot_block)[shot_file_num].sorted_photon_bins[i][0]);
-					photon_bins_length[i] = (*shot_block)[shot_file_num].sorted_photon_tag_pointers[i];
-				}
-
-				//Calculate coincidences
-				cudaError_t cudaStatus = calculateCoincidences(&photon_bins, &photon_bins_length, numer, denom, max_bin, pulse_spacing, max_pulse_distance, start_and_end_clocks, gpu_data);
-				if (cudaStatus != cudaSuccess) {
-					mexPrintf("addWithCuda failed!\n");
-					exit;
-				}
-			}
-		}
-	}
-}
-
 void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	//Get list of files to process
 	mxArray *cell_element_ptr;
@@ -578,6 +434,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 		mexPrintf("cudaMalloc max_pulse_distance_gpu failed!\n");
 		goto Error;
 	}
+	cudaStatus = cudaMalloc((void**)&(gpu_data.denom_gpu), (*max_pulse_distance * 2 + 1) * file_block_size * sizeof(long int));
+	if (cudaStatus != cudaSuccess) {
+		mexPrintf("cudaMalloc max_pulse_distance_gpu failed!\n");
+		goto Error;
+	}
 
 	//And set some values that are constant across all data
 	cudaStatus = cudaMemcpy((gpu_data.max_bin_gpu), &max_bin, sizeof(int), cudaMemcpyHostToDevice);
@@ -607,7 +468,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 		goto Error;
 	}
 
+	//Set numerator and denominator to 0
 	cudaStatus = cudaMemset((gpu_data).numer_gpu, 0, (2 * (max_bin)+1) * file_block_size * sizeof(long int));
+	if (cudaStatus != cudaSuccess) {
+		mexPrintf("cudaMemset failed!\n");
+		goto Error;
+	}
+	cudaStatus = cudaMemset((gpu_data).denom_gpu, 0, (*max_pulse_distance * 2 + 1) * file_block_size * sizeof(long int));
 	if (cudaStatus != cudaSuccess) {
 		mexPrintf("cudaMemset failed!\n");
 		goto Error;
@@ -620,16 +487,30 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	}
 
 	//Figure out how many blocks to chunk the processing up into
-	int threads_per_cuda_block = 1024;
-	int cuda_blocks = 0;
-	if (threads_per_cuda_block >= max_bin * 2 + 1) {
-		cuda_blocks = 1;
+	//For the numerator
+	int threads_per_cuda_block_numer = 1024;
+	int cuda_blocks_numer = 0;
+	if (threads_per_cuda_block_numer >= max_bin * 2 + 1) {
+		cuda_blocks_numer = 1;
 	}
-	else if (((max_bin * 2 + 1) % threads_per_cuda_block) == 0) {
-		cuda_blocks = (max_bin * 2 + 1) / threads_per_cuda_block;
+	else if (((max_bin * 2 + 1) % threads_per_cuda_block_numer) == 0) {
+		cuda_blocks_numer = (max_bin * 2 + 1) / threads_per_cuda_block_numer;
 	}
 	else {
-		cuda_blocks = (max_bin * 2 + 1) / threads_per_cuda_block + 1;
+		cuda_blocks_numer = (max_bin * 2 + 1) / threads_per_cuda_block_numer + 1;
+	}
+
+	//And the denominator
+	int threads_per_cuda_block_denom = 32;
+	int cuda_blocks_denom = 0;
+	if (threads_per_cuda_block_denom >= *max_pulse_distance * 2 + 1) {
+		cuda_blocks_denom = 1;
+	}
+	else if (((max_bin * 2 + 1) % threads_per_cuda_block_denom) == 0) {
+		cuda_blocks_denom = (*max_pulse_distance * 2 + 1) / threads_per_cuda_block_denom;
+	}
+	else {
+		cuda_blocks_denom = (*max_pulse_distance * 2 + 1) / threads_per_cuda_block_denom + 1;
 	}
 
 	//Processes files in blocks
@@ -698,21 +579,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 							goto Error;
 						}
 					}
-				}
-			}
-		}
-
-		//Launch kernels for block to calculate numerator
-		for (int shot_file_num = 0; shot_file_num < file_block_size; shot_file_num++) {
-			if ((shot_block)[shot_file_num].file_load_completed) {
-				int num_channels = (shot_block)[shot_file_num].channel_list.size();
-				if (num_channels >= 2) {
-					//Launch numerator calculating kernel for each set of channels
-					for (int channel_1 = 0; channel_1 < num_channels; channel_1++) {
-						for (int channel_2 = channel_1 + 1; channel_2 < num_channels; channel_2++) {
-							calculateCoincidencesGPU_g2 << <cuda_blocks, 1024, 0, streams[shot_file_num] >> >((gpu_data).numer_gpu, (gpu_data).photon_bins_gpu, (gpu_data).start_and_end_clocks_gpu, (gpu_data).max_bin_gpu, (gpu_data).pulse_spacing_gpu, (gpu_data).max_pulse_distance_gpu, (gpu_data).offset_gpu, (gpu_data).photon_bins_length_gpu, channel_1, channel_2, shot_file_num);
-						}
-					}
+					//Run kernels
+					calculateNumeratorGPU_g2 << <cuda_blocks_numer, threads_per_cuda_block_numer, 0, streams[shot_file_num] >> >((gpu_data).numer_gpu, (gpu_data).photon_bins_gpu, (gpu_data).start_and_end_clocks_gpu, (gpu_data).max_bin_gpu, (gpu_data).pulse_spacing_gpu, (gpu_data).max_pulse_distance_gpu, (gpu_data).offset_gpu, (gpu_data).photon_bins_length_gpu, num_channels, shot_file_num);
+					calculateDenominatorGPU_g2 << <cuda_blocks_denom, threads_per_cuda_block_denom, 0, streams[shot_file_num] >> >((gpu_data).denom_gpu, (gpu_data).photon_bins_gpu, (gpu_data).start_and_end_clocks_gpu, (gpu_data).max_bin_gpu, (gpu_data).pulse_spacing_gpu, (gpu_data).max_pulse_distance_gpu, (gpu_data).offset_gpu, (gpu_data).photon_bins_length_gpu, num_channels, shot_file_num);
 				}
 			}
 		}
@@ -724,102 +593,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 			goto Error;
 		}
 
-		//Calculate denominator
-		int streamed_denom[file_block_size];
-		#pragma omp parallel for
-		for (int shot_file_num = 0; shot_file_num < file_block_size; shot_file_num++) {
-			streamed_denom[shot_file_num] = 0;
-			if ((shot_block)[shot_file_num].file_load_completed) {
-				int num_channels = (shot_block)[shot_file_num].channel_list.size();
-				if (num_channels >= 2) {
-					std::vector<long int*> photon_bins;
-					long int start_and_end_clocks[2];
-					std::vector<int> photon_bins_length;
-					photon_bins.resize(max_channels);
-					photon_bins_length.resize(max_channels);
-
-					start_and_end_clocks[0] = (shot_block)[shot_file_num].sorted_clock_bins[1][0];
-					start_and_end_clocks[1] = (shot_block)[shot_file_num].sorted_clock_bins[0][0];
-					for (int i = 0; i < num_channels; i++) {
-						photon_bins[i] = &((shot_block)[shot_file_num].sorted_photon_bins[i][0]);
-						photon_bins_length[i] = (shot_block)[shot_file_num].sorted_photon_tag_pointers[i];
-					}
-					//While the numerator is calculating calculate the denominator on the CPU
-					for (int channel_1 = 0; channel_1 < photon_bins.size(); channel_1++) {
-						for (int channel_2 = channel_1 + 1; channel_2 < photon_bins.size(); channel_2++) {
-							//Now do the denominator calculations
-							long int running_denom = 0;
-							int pulse_shift;
-							for (pulse_shift = -*max_pulse_distance; pulse_shift <= *max_pulse_distance; pulse_shift++) {
-								if (pulse_shift != 0) {
-									int i = 0;
-									int j = 0;
-									//Loop until we hit the end of one of our vectors
-									while ((i < (photon_bins_length)[channel_1]) & (j < (photon_bins_length)[channel_2])) {
-										//Check if the bin shift will cause an undeflow and increment till it does not
-										if ((pulse_shift*(bin_pulse_spacing) >(photon_bins)[channel_2][j]) & (pulse_shift*(bin_pulse_spacing) > 0)) {
-											j++;
-										}
-										else if (((photon_bins)[channel_1][i] < (max_bin + *max_pulse_distance * bin_pulse_spacing + start_and_end_clocks[0])) || ((photon_bins)[channel_1][i] > (start_and_end_clocks[1] - (max_bin + *max_pulse_distance * bin_pulse_spacing)))) {
-											//printf("%i\t%i\t%i\n", (photon_bins)[channel_1][i], (*max_bin + *max_pulse_distance * bin_pulse_spacing + start_and_end_clocks[0]), (start_and_end_clocks[1] - (*max_bin + *max_pulse_distance * bin_pulse_spacing)));
-											i++;
-										}
-										else {
-											//Abuse the fact that each vector is chronologically ordered to help find common elements quickly
-											if ((photon_bins)[channel_1][i] > ((photon_bins)[channel_2][j] - pulse_shift*(bin_pulse_spacing))) {
-												j++;
-											}
-											else if ((photon_bins)[channel_1][i] < ((photon_bins)[channel_2][j] - pulse_shift*(bin_pulse_spacing))) {
-												i++;
-											}
-											//If there is a common elements increment coincidence counts
-											else if ((photon_bins)[channel_1][i] == ((photon_bins)[channel_2][j] - pulse_shift*(bin_pulse_spacing))) {
-												//See if there are duplicate elements that hold extra coincidences
-												int duplicate_chan_1 = 1;
-												int duplicate_chan_2 = 1;
-												int dummy_i = 1;
-												int dummy_j = 1;
-												bool looking_for_duplciates = true;
-												//First check for duplicates on channel 1
-												while (looking_for_duplciates) {
-													if ((photon_bins)[channel_1][i] == (photon_bins)[channel_1][i + dummy_i]) {
-														duplicate_chan_1++;
-														dummy_i++;
-													}
-													else {
-														looking_for_duplciates = false;
-													}
-												}
-												//Then on channel 2
-												looking_for_duplciates = true;
-												while (looking_for_duplciates) {
-													if ((photon_bins)[channel_2][j] == (photon_bins)[channel_2][j + dummy_j]) {
-														duplicate_chan_2++;
-														dummy_j++;
-													}
-													else {
-														looking_for_duplciates = false;
-													}
-												}
-												//Increment the running tot by the number of combined coincidences due to duplicates
-												running_denom += duplicate_chan_1 * duplicate_chan_2;
-												//Shift i & j past the duplicates
-												i += dummy_i;
-												j += dummy_j;
-											}
-										}
-									}
-								}
-							}
-							streamed_denom[shot_file_num] += running_denom;
-						}
-					}
-				}
-			}
-		}
-		for (int shot_file_num = 0; shot_file_num < file_block_size; shot_file_num++) {
-			denom[0] += streamed_denom[shot_file_num];
-		}
 	}
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns
@@ -850,6 +623,23 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 		}
 	}
 	free(streamed_numer);
+
+	//This is to pull the streamed denominator off the GPU
+	long int *streamed_denom;
+	streamed_denom= (long int *)malloc((*max_pulse_distance * 2 + 1) * file_block_size * sizeof(long int));
+
+	// Copy output vector from GPU buffer to host memory.
+	cudaStatus = cudaMemcpy(streamed_denom, (gpu_data).denom_gpu, (*max_pulse_distance * 2 + 1) * file_block_size * sizeof(long int), cudaMemcpyDeviceToHost);
+	if (cudaStatus != cudaSuccess) {
+		mexPrintf("cudaMemcpy failed!\n");
+		free(streamed_numer);
+		goto Error;
+	}
+	//Collapse streamed denominator down to regular denominator
+	for (int i = 0; i < (*max_pulse_distance * 2 + 1) * file_block_size; i++) {
+		denom[0] += streamed_denom[i];
+	}
+	free(streamed_denom);
 
 	//Free filenames we malloc'd earlier
 	for (int i = 0; i < total_num_files; i++) {

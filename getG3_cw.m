@@ -1,7 +1,7 @@
 function [ g3, tau , running_numer, running_denom] = getG3_cw( bin_width, max_time)
     %%For use with non-pulsed data taking    
 
-    pulse_spacing = int32(round(10e-6/bin_width));
+    pulse_spacing = int32(round(100e-6/bin_width));
     max_bin = int32(round(max_time/bin_width));
     max_pulse_distance = int32(2);
     %Get directory of files
