@@ -1,0 +1,2 @@
+LIBRARY binsToCoincidences_g2
+EXPORTS mexFunction 

@@ -1,0 +1,12 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(387,5): warning MSB8028: The intermediate directory (x64\Release\) contains files shared from another project (binsToCoincidences_g2.vcxproj, tagsToCoincidences_g2.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  binsToCoincidences_g2_cw.cpp
+binsToCoincidences_g2_cw.cpp(169): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+     Creating library C:\Users\Ryd Berg\Google Drive\Rydberg Experiment\Matlab\CorrelationCalculations\binsToCoincidences_g2_cw\x64\Release\binsToCoincidences_g2_cw.lib and object C:\Users\Ryd Berg\Google Drive\Rydberg Experiment\Matlab\CorrelationCalculations\binsToCoincidences_g2_cw\x64\Release\binsToCoincidences_g2_cw.exp
+binsToCoincidences_g2_cw.exp : warning LNK4070: /OUT:binsToCoincidences_g2.dll directive in .EXP differs from output filename 'C:\Users\Ryd Berg\Google Drive\Rydberg Experiment\Matlab\CorrelationCalculations\binsToCoincidences_g2_cw\x64\Release\binsToCoincidences_g2_cw.mexw64'; ignoring directive
+  Generating code
+  4 of 88 functions ( 4.5%) were compiled, the rest were copied from previous compilation.
+    2 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+binsToCoincidences_g2_cw.exp : warning LNK4070: /OUT:binsToCoincidences_g2.dll directive in .EXP differs from output filename 'C:\Users\Ryd Berg\Google Drive\Rydberg Experiment\Matlab\CorrelationCalculations\binsToCoincidences_g2_cw\x64\Release\binsToCoincidences_g2_cw.mexw64'; ignoring directive
+  tagsToCoincidences_g2.vcxproj -> C:\Users\Ryd Berg\Google Drive\Rydberg Experiment\Matlab\CorrelationCalculations\binsToCoincidences_g2_cw\x64\Release\binsToCoincidences_g2_cw.mexw64

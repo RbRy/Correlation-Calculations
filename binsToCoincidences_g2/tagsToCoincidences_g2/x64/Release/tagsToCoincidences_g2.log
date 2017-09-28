@@ -1,0 +1,5 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(387,5): warning MSB8028: The intermediate directory (x64\Release\) contains files shared from another project (tagsToCoincidences_g2.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  stdafx.cpp
+  dllmain.cpp
+  binsToCoincidences_g2.cpp
+binsToCoincidences_g2.cpp(5): fatal error C1083: Cannot open include file: 'mex.h': No such file or directory
