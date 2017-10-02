@@ -560,19 +560,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	dim3 cuda_blocks_numer(cuda_blocks_req_numer, cuda_blocks_req_numer);
 
 	//Figure out how many CUDA blocks to chunk the processing up into for the denominator
-	int threads_per_block_dim_denom = 4;
-	int cuda_blocks_req_denom = 0;
-	if (threads_per_block_dim_denom >= *max_pulse_distance * 2 + 1) {
-		cuda_blocks_req_denom = 1;
-	}
-	else if (((*max_pulse_distance * 2 + 1) % threads_per_block_dim_denom) == 0) {
-		cuda_blocks_req_denom = (*max_pulse_distance * 2 + 1) / threads_per_block_dim_denom;
-	}
-	else {
-		cuda_blocks_req_denom = (*max_pulse_distance * 2 + 1) / threads_per_block_dim_denom + 1;
-	}
+	int threads_per_block_dim_denom = (*max_pulse_distance * 2 + 1);
 	dim3 cuda_threads_denom(threads_per_block_dim_denom, threads_per_block_dim_denom);
-	dim3 cuda_blocks_denom(cuda_blocks_req_denom, cuda_blocks_req_denom);
+	dim3 cuda_blocks_denom(1, 1);
 
 	//Processes files in blocks
 	for (int block_num = 0; block_num < blocks_req; block_num++) {
@@ -588,11 +578,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 
 		// cudaDeviceSynchronize waits for the kernel to finish, and returns
 		// any errors encountered during the launch.
-		cudaStatus = cudaDeviceSynchronize();
+		/*cudaStatus = cudaDeviceSynchronize();
 		if (cudaStatus != cudaSuccess) {
 			mexPrintf("cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
 			goto Error;
-		}
+		}*/
 
 		//Asyncronously load data to GPU
 		for (int shot_file_num = 0; shot_file_num < file_block_size; shot_file_num++) {
@@ -617,7 +607,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 					for (int i = 0; i < photon_bins_length.size(); i++) {
 						cudaStatus = cudaMemcpyAsync((gpu_data).photon_bins_gpu + photon_offset, (photon_bins)[i], (photon_bins_length)[i] * sizeof(long int), cudaMemcpyHostToDevice, streams[shot_file_num]);
 						if (cudaStatus != cudaSuccess) {
-							mexPrintf("cudaMemcpy photon_offset failed!\n");
+							mexPrintf("%i\t%i\n", block_num, shot_file_num);
+							mexPrintf("cudaMemcpy photon_offset failed! Error message: %s\n", cudaGetErrorString(cudaStatus));
 							goto Error;
 						}
 						photon_offset += max_tags_length;

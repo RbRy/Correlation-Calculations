@@ -21,7 +21,7 @@ const int max_tags_length = 500000;
 const int max_clock_tags_length = 5000;
 const int max_channels = 3;
 const size_t return_size = 3;
-const int file_block_size = 4;
+const int file_block_size = 64;
 const double tagger_resolution = 82.3e-12;
 
 struct shotData {
@@ -501,17 +501,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	}
 
 	//And the denominator
-	int threads_per_cuda_block_denom = 32;
-	int cuda_blocks_denom = 0;
-	if (threads_per_cuda_block_denom >= *max_pulse_distance * 2 + 1) {
-		cuda_blocks_denom = 1;
-	}
-	else if (((max_bin * 2 + 1) % threads_per_cuda_block_denom) == 0) {
-		cuda_blocks_denom = (*max_pulse_distance * 2 + 1) / threads_per_cuda_block_denom;
-	}
-	else {
-		cuda_blocks_denom = (*max_pulse_distance * 2 + 1) / threads_per_cuda_block_denom + 1;
-	}
+	int threads_per_cuda_block_denom = (*max_pulse_distance * 2 + 1);
+	int cuda_blocks_denom = 1;
 
 	//Processes files in blocks
 	for (int block_num = 0; block_num < blocks_req; block_num++) {
@@ -532,6 +523,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 			mexPrintf("cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
 			goto Error;
 		}*/
+
+		// Check for any errors launching the kernel
+		cudaStatus = cudaGetLastError();
+		if (cudaStatus != cudaSuccess) {
+			mexPrintf("addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+			goto Error;
+		}
 
 		//Asyncronously load data to GPU
 		for (int shot_file_num = 0; shot_file_num < file_block_size; shot_file_num++) {
@@ -556,7 +554,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 					for (int i = 0; i < photon_bins_length.size(); i++) {
 						cudaStatus = cudaMemcpyAsync((gpu_data).photon_bins_gpu + photon_offset, (photon_bins)[i], (photon_bins_length)[i] * sizeof(long int), cudaMemcpyHostToDevice, streams[shot_file_num]);
 						if (cudaStatus != cudaSuccess) {
-							mexPrintf("cudaMemcpy failed!\n");
+							mexPrintf("cudaMemcpy photon_bins failed!\n");
 							goto Error;
 						}
 						photon_offset += max_tags_length;
@@ -566,7 +564,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 					//And other parameters
 					cudaStatus = cudaMemcpyAsync((gpu_data).start_and_end_clocks_gpu + clock_offset, start_and_end_clocks, 2 * sizeof(long int), cudaMemcpyHostToDevice, streams[shot_file_num]);
 					if (cudaStatus != cudaSuccess) {
-						mexPrintf("cudaMemcpy failed!\n");
+						mexPrintf("cudaMemcpy clock_offset failed!\n");
 						goto Error;
 					}
 
@@ -575,7 +573,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 					for (int i = 0; i < photon_bins_length.size(); i++) {
 						cudaStatus = cudaMemcpyAsync((gpu_data).photon_bins_length_gpu + i + length_offset, &((photon_bins_length)[i]), sizeof(int), cudaMemcpyHostToDevice, streams[shot_file_num]);
 						if (cudaStatus != cudaSuccess) {
-							mexPrintf("cudaMemcpy failed!\n");
+							mexPrintf("cudaMemcpy length_offset failed!\n");
 							goto Error;
 						}
 					}
@@ -584,13 +582,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 					calculateDenominatorGPU_g2 << <cuda_blocks_denom, threads_per_cuda_block_denom, 0, streams[shot_file_num] >> >((gpu_data).denom_gpu, (gpu_data).photon_bins_gpu, (gpu_data).start_and_end_clocks_gpu, (gpu_data).max_bin_gpu, (gpu_data).pulse_spacing_gpu, (gpu_data).max_pulse_distance_gpu, (gpu_data).offset_gpu, (gpu_data).photon_bins_length_gpu, num_channels, shot_file_num);
 				}
 			}
-		}
-
-		// Check for any errors launching the kernel
-		cudaStatus = cudaGetLastError();
-		if (cudaStatus != cudaSuccess) {
-			mexPrintf("addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-			goto Error;
 		}
 
 	}
@@ -611,7 +602,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	// Copy output vector from GPU buffer to host memory.
 	cudaStatus = cudaMemcpy(streamed_numer, (gpu_data).numer_gpu, (2 * (max_bin)+1) * file_block_size * sizeof(long int), cudaMemcpyDeviceToHost);
 	if (cudaStatus != cudaSuccess) {
-		mexPrintf("cudaMemcpy failed!\n");
+		mexPrintf("cudaMemcpy numerator failed!\n");
 		free(streamed_numer);
 		goto Error;
 	}
@@ -631,7 +622,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	// Copy output vector from GPU buffer to host memory.
 	cudaStatus = cudaMemcpy(streamed_denom, (gpu_data).denom_gpu, (*max_pulse_distance * 2 + 1) * file_block_size * sizeof(long int), cudaMemcpyDeviceToHost);
 	if (cudaStatus != cudaSuccess) {
-		mexPrintf("cudaMemcpy failed!\n");
+		mexPrintf("cudaMemcpy denominator failed!\n");
 		free(streamed_numer);
 		goto Error;
 	}
