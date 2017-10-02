@@ -17,7 +17,7 @@
 #endif
 #include <mex.h>
 
-const int max_tags_length = 500000;
+const int max_tags_length = 200000;
 const int max_clock_tags_length = 5000;
 const int max_channels = 3;
 const size_t return_size = 3;
@@ -488,7 +488,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 
 	//Figure out how many blocks to chunk the processing up into
 	//For the numerator
-	int threads_per_cuda_block_numer = 1024;
+	int threads_per_cuda_block_numer = 128;
 	int cuda_blocks_numer = 0;
 	if (threads_per_cuda_block_numer >= max_bin * 2 + 1) {
 		cuda_blocks_numer = 1;

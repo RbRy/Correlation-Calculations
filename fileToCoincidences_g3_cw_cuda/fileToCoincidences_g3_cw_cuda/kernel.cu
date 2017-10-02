@@ -17,11 +17,11 @@
 #endif
 #include <mex.h>
 
-const int max_tags_length = 500000;
+const int max_tags_length = 200000;
 const int max_clock_tags_length = 5000;
 const int max_channels = 3;
 const size_t return_size = 3;
-const int file_block_size = 4;
+const int file_block_size = 64;
 const double tagger_resolution = 82.3e-12;
 
 struct shotData {
@@ -545,7 +545,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	}
 
 	//Figure out how many CUDA blocks to chunk the processing up into for the numerator
-	int threads_per_block_dim_numer = 32;
+	int threads_per_block_dim_numer = 16;
 	int cuda_blocks_req_numer = 0;
 	if (threads_per_block_dim_numer >= max_bin * 2 + 1) {
 		cuda_blocks_req_numer = 1;
@@ -583,6 +583,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 			mexPrintf("cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
 			goto Error;
 		}*/
+
+		// Check for any errors launching the kernel
+		cudaStatus = cudaGetLastError();
+		if (cudaStatus != cudaSuccess) {
+			mexPrintf("addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+			goto Error;
+		}
 
 		//Asyncronously load data to GPU
 		for (int shot_file_num = 0; shot_file_num < file_block_size; shot_file_num++) {
@@ -636,12 +643,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 					calculateNumeratorGPU_g3 << <cuda_blocks_numer, cuda_threads_numer, 0, streams[shot_file_num] >> >((gpu_data).numer_gpu, (gpu_data).photon_bins_gpu, (gpu_data).start_and_end_clocks_gpu, (gpu_data).max_bin_gpu, (gpu_data).pulse_spacing_gpu, (gpu_data).max_pulse_distance_gpu, (gpu_data).offset_gpu, (gpu_data).photon_bins_length_gpu, num_channels, shot_file_num);
 					//Launch denominator calculating kernel for each set of channels
 					calculateDenominatorGPU_g3 << <cuda_blocks_denom, cuda_threads_denom, 0, streams[shot_file_num] >> >((gpu_data).denom_gpu, (gpu_data).photon_bins_gpu, (gpu_data).start_and_end_clocks_gpu, (gpu_data).max_bin_gpu, (gpu_data).pulse_spacing_gpu, (gpu_data).max_pulse_distance_gpu, (gpu_data).offset_gpu, (gpu_data).photon_bins_length_gpu, num_channels, shot_file_num);
-					// Check for any errors launching the kernel
-					cudaStatus = cudaGetLastError();
-					if (cudaStatus != cudaSuccess) {
-						mexPrintf("addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
-						goto Error;
-					}
 				}
 			}
 		}
