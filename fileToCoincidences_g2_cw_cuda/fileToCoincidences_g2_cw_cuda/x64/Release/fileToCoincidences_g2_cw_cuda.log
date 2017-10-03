@@ -1,47 +1,47 @@
 ﻿  Compiling CUDA source file kernel.cu...
   
   C:\Users\Ryd Berg\Documents\GitHub\correlationCalculations\fileToCoincidences_g2_cw_cuda\fileToCoincidences_g2_cw_cuda>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\bin\nvcc.exe" -gencode=arch=compute_61,code=\"sm_61,compute_61\" --use-local-env --cl-version 2015 -ccbin "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64"  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\include"     --keep-dir x64\Release -maxrregcount=0  --machine 64 --compile -cudart static -Xcompiler "/openmp"    -DWIN32 -DWIN64 -DNDEBUG -D_CONSOLE -D_WINDLL -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /FS /Zi  /MD " -o x64\Release\kernel.cu.obj "C:\Users\Ryd Berg\Documents\GitHub\correlationCalculations\fileToCoincidences_g2_cw_cuda\fileToCoincidences_g2_cw_cuda\kernel.cu" 
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(147): warning : expression has no effect
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(398): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(408): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(413): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(418): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(423): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(428): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(433): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(438): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(443): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(448): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(455): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(460): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(465): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(476): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(483): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(488): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(149): warning : expression has no effect
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(400): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(410): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(415): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(420): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(425): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(430): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(435): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(440): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(445): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(452): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(457): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(462): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(473): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(480): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(510): warning : variable "threads_per_cuda_block_denom" was declared but never referenced
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(511): warning : variable "cuda_blocks_denom" was declared but never referenced
 C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(23): warning : variable "return_size" was declared but never referenced
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(147): warning : expression has no effect
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(398): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(408): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(413): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(418): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(423): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(428): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(433): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(438): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(443): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(448): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(455): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(460): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(465): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(476): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(483): warning : transfer of control bypasses initialization of:
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(488): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(149): warning : expression has no effect
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(400): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(410): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(415): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(420): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(425): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(430): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(435): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(440): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(445): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(452): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(457): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(462): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(473): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(480): warning : transfer of control bypasses initialization of:
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(510): warning : variable "threads_per_cuda_block_denom" was declared but never referenced
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(511): warning : variable "cuda_blocks_denom" was declared but never referenced
 C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(23): warning : variable "return_size" was declared but never referenced
   kernel.cu
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(147): warning C4551: function call missing argument list
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(380): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(383): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(551): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(149): warning C4551: function call missing argument list
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(382): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(385): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g2_cw_cuda/fileToCoincidences_g2_cw_cuda/kernel.cu(543): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
      Creating library C:\Users\Ryd Berg\Documents\GitHub\correlationCalculations\fileToCoincidences_g2_cw_cuda\x64\Release\fileToCoincidences_g2_cw_cuda.lib and object C:\Users\Ryd Berg\Documents\GitHub\correlationCalculations\fileToCoincidences_g2_cw_cuda\x64\Release\fileToCoincidences_g2_cw_cuda.exp
   LINK : /LTCG specified but no code generation required; remove /LTCG from the link command line to improve linker performance
 libszip.lib(rice.obj) : warning LNK4099: PDB 'libszip.pdb' was not found with 'libszip.lib(rice.obj)' or at 'C:\Users\Ryd Berg\Documents\GitHub\correlationCalculations\fileToCoincidences_g2_cw_cuda\x64\Release\libszip.pdb'; linking object as if no debug info
