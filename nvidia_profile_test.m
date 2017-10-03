@@ -7,6 +7,6 @@ filelist = cell(length(file_struct),1);
 for i = 1:length(file_struct)
     filelist{i} = sprintf('%s\\%s',folder_name,file_struct(i).name);
 end
-fileToCoincidences_g3_cw_cuda(filelist, bin_width, max_time, 100e-6, max_pulse_distance);
+fileToCoincidences_g2_cw_cuda(filelist, bin_width, max_time, 100e-6, max_pulse_distance);
 clear mex;
 exit

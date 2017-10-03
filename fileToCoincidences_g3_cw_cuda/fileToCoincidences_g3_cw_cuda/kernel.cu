@@ -443,6 +443,14 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	}
 	printf("Processing %i files in %i blocks\n", total_num_files, blocks_req);
 
+	//Pointers for our various pinned memory for host-GPU DMA
+	long int* pinned_photon_bins;
+	long int* pinned_start_and_end_clocks;
+	int* pinned_photon_bins_length;
+	cudaMallocHost((long int**)&pinned_photon_bins, max_tags_length * max_channels * file_block_size * sizeof(long int));
+	cudaMallocHost((long int**)&pinned_start_and_end_clocks, 2 * file_block_size * sizeof(long int));
+	cudaMallocHost((int**)&pinned_photon_bins_length, max_channels * file_block_size * sizeof(int));
+
 	cudaError_t cudaStatus = cudaSetDevice(0);
 	if (cudaStatus != cudaSuccess) {
 		mexPrintf("cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
@@ -544,6 +552,12 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 		cudaStreamCreate(&streams[i]);
 	}
 
+	//Create some events to allow us to know if previous transfer has completed
+	cudaEvent_t events[file_block_size];
+	for (int i = 0; i < file_block_size; i++) {
+		cudaEventCreate(&events[i]);
+	}
+
 	//Figure out how many CUDA blocks to chunk the processing up into for the numerator
 	int threads_per_block_dim_numer = 16;
 	int cuda_blocks_req_numer = 0;
@@ -609,10 +623,15 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 						photon_bins[i] = &((shot_block)[shot_file_num].sorted_photon_bins[i][0]);
 						photon_bins_length[i] = (shot_block)[shot_file_num].sorted_photon_tag_pointers[i];
 					}
+
+					//Synch to ensure previous asnyc memcopy has finished otherwise we'll start overwriting writing to data that may be DMA'd
+					cudaEventSynchronize(events[shot_file_num]);
+
 					//Write photon bins to memory
 					int photon_offset = shot_file_num * max_channels * max_tags_length;
 					for (int i = 0; i < photon_bins_length.size(); i++) {
-						cudaStatus = cudaMemcpyAsync((gpu_data).photon_bins_gpu + photon_offset, (photon_bins)[i], (photon_bins_length)[i] * sizeof(long int), cudaMemcpyHostToDevice, streams[shot_file_num]);
+						memcpy(pinned_photon_bins + photon_offset, (photon_bins)[i], (photon_bins_length)[i] * sizeof(long int));
+						cudaStatus = cudaMemcpyAsync((gpu_data).photon_bins_gpu + photon_offset, pinned_photon_bins + photon_offset, (photon_bins_length)[i] * sizeof(long int), cudaMemcpyHostToDevice, streams[shot_file_num]);
 						if (cudaStatus != cudaSuccess) {
 							mexPrintf("%i\t%i\n", block_num, shot_file_num);
 							mexPrintf("cudaMemcpy photon_offset failed! Error message: %s\n", cudaGetErrorString(cudaStatus));
@@ -623,7 +642,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 
 					int clock_offset = shot_file_num * 2;
 					//And other parameters
-					cudaStatus = cudaMemcpyAsync((gpu_data).start_and_end_clocks_gpu + clock_offset, start_and_end_clocks, 2 * sizeof(long int), cudaMemcpyHostToDevice, streams[shot_file_num]);
+					memcpy(pinned_start_and_end_clocks + clock_offset, start_and_end_clocks, 2 * sizeof(long int));
+					cudaStatus = cudaMemcpyAsync((gpu_data).start_and_end_clocks_gpu + clock_offset, pinned_start_and_end_clocks + clock_offset, 2 * sizeof(long int), cudaMemcpyHostToDevice, streams[shot_file_num]);
 					if (cudaStatus != cudaSuccess) {
 						mexPrintf("cudaMemcpy clock_offset failed!\n");
 						goto Error;
@@ -632,13 +652,17 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 					int length_offset = shot_file_num * max_channels;
 					//Can't copy vector to cuda easily
 					for (int i = 0; i < photon_bins_length.size(); i++) {
-						cudaStatus = cudaMemcpyAsync((gpu_data).photon_bins_length_gpu + i + length_offset, &((photon_bins_length)[i]), sizeof(int), cudaMemcpyHostToDevice, streams[shot_file_num]);
-						if (cudaStatus != cudaSuccess) {
-							mexPrintf("cudaMemcpy length_offset failed!\n");
-							goto Error;
-						}
+						memcpy(pinned_photon_bins_length + i + length_offset, &((photon_bins_length)[i]), sizeof(int));
+					}
+					cudaStatus = cudaMemcpyAsync((gpu_data).photon_bins_length_gpu + length_offset, pinned_photon_bins_length + length_offset, max_channels * sizeof(int), cudaMemcpyHostToDevice, streams[shot_file_num]);
+					if (cudaStatus != cudaSuccess) {
+						mexPrintf("cudaMemcpy length_offset failed!\n");
+						goto Error;
 					}
 					
+					//Create an event to let us know all the async copies have occured
+					cudaEventRecord(events[shot_file_num], streams[shot_file_num]);
+
 					//Launch numerator calculating kernel for each set of channels
 					calculateNumeratorGPU_g3 << <cuda_blocks_numer, cuda_threads_numer, 0, streams[shot_file_num] >> >((gpu_data).numer_gpu, (gpu_data).photon_bins_gpu, (gpu_data).start_and_end_clocks_gpu, (gpu_data).max_bin_gpu, (gpu_data).pulse_spacing_gpu, (gpu_data).max_pulse_distance_gpu, (gpu_data).offset_gpu, (gpu_data).photon_bins_length_gpu, num_channels, shot_file_num);
 					//Launch denominator calculating kernel for each set of channels
@@ -655,6 +679,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 		mexPrintf("cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
 		goto Error;
 	}
+
+	//Free pinned memory
+	cudaFreeHost(pinned_photon_bins);
+	cudaFreeHost(pinned_photon_bins_length);
+	cudaFreeHost(pinned_start_and_end_clocks);
 
 	//This is to pull the streamed numerator off the GPU
 	//Streamed numerator refers to the way the numerator is stored on the GPU where each GPU stream has a seperate numerator
@@ -751,5 +780,8 @@ Error:
 	cudaFree((gpu_data.photon_bins_length_gpu));
 	cudaFree(gpu_data.photon_bins_gpu);
 	cudaFree(gpu_data.start_and_end_clocks_gpu);
+	cudaFreeHost(pinned_photon_bins);
+	cudaFreeHost(pinned_photon_bins_length);
+	cudaFreeHost(pinned_start_and_end_clocks);
 	cudaDeviceReset();
 }
