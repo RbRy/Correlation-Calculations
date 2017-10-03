@@ -43,27 +43,40 @@ struct shotData {
 };
 
 struct gpuData {
-	long int *numer_gpu;
-	long int *denom_gpu;
+	long int *coinc_gpu;
 	long int *photon_bins_gpu;
 	long int *start_and_end_clocks_gpu;
 	int *max_bin_gpu, *pulse_spacing_gpu, *max_pulse_distance_gpu, *photon_bins_length_gpu;
 	int *offset_gpu;
 };
 
-__global__ void calculateNumeratorGPU_g3(long int *numer, long int *photon_bins, long int *start_and_end_clocks, int *max_bin, int *pulse_spacing, int *max_pulse_distance, int *offset, int *photon_bins_length, int num_channels, int shot_file_num) {
+__global__ void calculateCoincidenceGPU_g3(long int *coinc, long int *photon_bins, long int *start_and_end_clocks, int *max_bin, int *pulse_spacing, int *max_pulse_distance, int *offset, int *photon_bins_length, int num_channels, int shot_file_num) {
 	//Get numerator step to work on
-	int id_x = threadIdx.x;
-	int block_x = blockIdx.x;
-	int block_size_x = blockDim.x;
-	int id_y = threadIdx.y;
-	int block_y = blockIdx.y;
-	int block_size_y = blockDim.y;
+	int id = threadIdx.x;
+	int block = blockIdx.x;
+	int block_size = blockDim.x;
+
+	//Check if the id is something we're going to do a calculation on
+	int in_range = (block * block_size + id) < ((*max_bin * 2 + 1) * (*max_bin * 2 + 1) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2));
+
+	//Check if we're doing a denominator calculation
+	int pulse_shift_measurement = in_range && (block * block_size + id >= (*max_bin * 2 + 1) * (*max_bin * 2 + 1));
+	
+	//Determine effective id for x and y
+	int id_x = ((block * block_size + id) % (2 * (*max_bin) + 1)) * (!pulse_shift_measurement);
+	id_x += ((block * block_size + id - (2 * (*max_bin) + 1) * (2 * (*max_bin) + 1)) % (2 * (*max_pulse_distance))) * (pulse_shift_measurement);
+	int id_y = ((block * block_size + id) / (2 * (*max_bin) + 1)) * (!pulse_shift_measurement);
+	id_y += ((block * block_size + id - (2 * (*max_bin) + 1) * (2 * (*max_bin) + 1)) / (2 * (*max_pulse_distance))) * (pulse_shift_measurement);
 
 	//Check we're not calculating something out of range
-	if ((block_x * block_size_x + id_x < *max_bin * 2 + 1) && (block_y * block_size_y + id_y < *max_bin * 2 + 1)) {
-		int tau_1 = block_x * block_size_x + id_x - (*max_bin);
-		int tau_2 = block_y * block_size_y + id_y - (*max_bin);
+	if (in_range && (!pulse_shift_measurement || (pulse_shift_measurement && id_x != id_y))) {
+
+		int tau_1 = (id_x - (*max_bin)) * (!pulse_shift_measurement);
+		int pulse_shift_1 = ((id_x - (*max_pulse_distance)) + ((id_x - (*max_pulse_distance)) >= 0)) * (pulse_shift_measurement);
+		int pulse_shift_2 = ((id_y - (*max_pulse_distance)) + ((id_y - (*max_pulse_distance)) >= 0)) * (pulse_shift_measurement);
+		tau_1 += pulse_shift_1 * (*pulse_spacing);
+		int tau_2 = (id_y - (*max_bin)) * (!pulse_shift_measurement);
+		tau_2 += pulse_shift_2 * (*pulse_spacing);
 		for (int channel_1 = 0; channel_1 < num_channels; channel_1++) {
 			for (int channel_2 = channel_1 + 1; channel_2 < num_channels; channel_2++) {
 				for (int channel_3 = channel_2 + 1; channel_3 < num_channels; channel_3++) {
@@ -114,7 +127,8 @@ __global__ void calculateNumeratorGPU_g3(long int *numer, long int *photon_bins,
 						j += dummy_j;
 						k += dummy_k;
 					}
-					numer[block_x * block_size_x + id_x + (block_y * block_size_y + id_y) * (*max_bin * 2 + 1) + shot_file_num * (*max_bin * 2 + 1) * (*max_bin * 2 + 1)] += running_tot;
+					coinc[(block * block_size + id) + shot_file_num * ((*max_bin * 2 + 1) * (*max_bin * 2 + 1) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2))] += running_tot;
+					//coinc[(block * block_size + id) + shot_file_num * ((*max_bin * 2 + 1) * (*max_bin * 2 + 1) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2))] = (block * block_size + id) + shot_file_num * ((*max_bin * 2 + 1) * (*max_bin * 2 + 1) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2));
 				}
 			}
 		}
@@ -476,7 +490,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 		mexPrintf("cudaMalloc photon_bins_length_gpu failed!\n");
 		goto Error;
 	}
-	cudaStatus = cudaMalloc((void**)&(gpu_data.numer_gpu), (2 * (max_bin)+1) * (2 * (max_bin)+1) * file_block_size * sizeof(long int));
+	cudaStatus = cudaMalloc((void**)&(gpu_data.coinc_gpu), (((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2)) * file_block_size * sizeof(long int));
 	if (cudaStatus != cudaSuccess) {
 		mexPrintf("cudaMalloc numer_gpu failed!\n");
 		goto Error;
@@ -497,11 +511,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 		goto Error;
 	}
 	cudaStatus = cudaMalloc((void**)&(gpu_data.max_pulse_distance_gpu), sizeof(int));
-	if (cudaStatus != cudaSuccess) {
-		mexPrintf("cudaMalloc max_pulse_distance_gpu failed!\n");
-		goto Error;
-	}
-	cudaStatus = cudaMalloc((void**)&(gpu_data.denom_gpu), (*max_pulse_distance * 2 + 1) * (*max_pulse_distance * 2 + 1) * file_block_size * sizeof(long int));
 	if (cudaStatus != cudaSuccess) {
 		mexPrintf("cudaMalloc max_pulse_distance_gpu failed!\n");
 		goto Error;
@@ -535,12 +544,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 		goto Error;
 	}
 
-	cudaStatus = cudaMemset((gpu_data).numer_gpu, 0, (2 * (max_bin)+1) * file_block_size * sizeof(long int));
-	if (cudaStatus != cudaSuccess) {
-		mexPrintf("cudaMemset failed!\n");
-		goto Error;
-	}
-	cudaStatus = cudaMemset((gpu_data).denom_gpu, 0, (*max_pulse_distance * 2 + 1) * (*max_pulse_distance * 2 + 1) * file_block_size * sizeof(long int));
+	cudaStatus = cudaMemset((gpu_data).coinc_gpu, 0, (((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2)) * file_block_size * sizeof(long int));
 	if (cudaStatus != cudaSuccess) {
 		mexPrintf("cudaMemset failed!\n");
 		goto Error;
@@ -559,19 +563,17 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	}
 
 	//Figure out how many CUDA blocks to chunk the processing up into for the numerator
-	int threads_per_block_dim_numer = 16;
-	int cuda_blocks_req_numer = 0;
-	if (threads_per_block_dim_numer >= max_bin * 2 + 1) {
-		cuda_blocks_req_numer = 1;
+	int cuda_blocks_numer = 0;
+	int threads_per_block_numer = 128;
+	if (threads_per_block_numer >= (((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2))) {
+		cuda_blocks_numer = 1;
 	}
-	else if (((max_bin * 2 + 1) % threads_per_block_dim_numer) == 0) {
-		cuda_blocks_req_numer = (max_bin * 2 + 1) / threads_per_block_dim_numer;
+	else if (((((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2)) % threads_per_block_numer) == 0) {
+		cuda_blocks_numer = (((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2)) / threads_per_block_numer;
 	}
 	else {
-		cuda_blocks_req_numer = (max_bin * 2 + 1) / threads_per_block_dim_numer + 1;
+		cuda_blocks_numer = (((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2)) / threads_per_block_numer + 1;
 	}
-	dim3 cuda_threads_numer(threads_per_block_dim_numer, threads_per_block_dim_numer);
-	dim3 cuda_blocks_numer(cuda_blocks_req_numer, cuda_blocks_req_numer);
 
 	//Figure out how many CUDA blocks to chunk the processing up into for the denominator
 	int threads_per_block_dim_denom = (*max_pulse_distance * 2 + 1);
@@ -664,9 +666,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 					cudaEventRecord(events[shot_file_num], streams[shot_file_num]);
 
 					//Launch numerator calculating kernel for each set of channels
-					calculateNumeratorGPU_g3 << <cuda_blocks_numer, cuda_threads_numer, 0, streams[shot_file_num] >> >((gpu_data).numer_gpu, (gpu_data).photon_bins_gpu, (gpu_data).start_and_end_clocks_gpu, (gpu_data).max_bin_gpu, (gpu_data).pulse_spacing_gpu, (gpu_data).max_pulse_distance_gpu, (gpu_data).offset_gpu, (gpu_data).photon_bins_length_gpu, num_channels, shot_file_num);
-					//Launch denominator calculating kernel for each set of channels
-					calculateDenominatorGPU_g3 << <cuda_blocks_denom, cuda_threads_denom, 0, streams[shot_file_num] >> >((gpu_data).denom_gpu, (gpu_data).photon_bins_gpu, (gpu_data).start_and_end_clocks_gpu, (gpu_data).max_bin_gpu, (gpu_data).pulse_spacing_gpu, (gpu_data).max_pulse_distance_gpu, (gpu_data).offset_gpu, (gpu_data).photon_bins_length_gpu, num_channels, shot_file_num);
+					calculateCoincidenceGPU_g3 << <cuda_blocks_numer, threads_per_block_numer, 0, streams[shot_file_num] >> >((gpu_data).coinc_gpu, (gpu_data).photon_bins_gpu, (gpu_data).start_and_end_clocks_gpu, (gpu_data).max_bin_gpu, (gpu_data).pulse_spacing_gpu, (gpu_data).max_pulse_distance_gpu, (gpu_data).offset_gpu, (gpu_data).photon_bins_length_gpu, num_channels, shot_file_num);
 				}
 			}
 		}
@@ -687,45 +687,29 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 
 	//This is to pull the streamed numerator off the GPU
 	//Streamed numerator refers to the way the numerator is stored on the GPU where each GPU stream has a seperate numerator
-	long int *streamed_numer;
-	streamed_numer = (long int *)malloc((2 * (max_bin)+1) * (2 * (max_bin)+1) * file_block_size * sizeof(long int));
+	long int *streamed_coinc;
+	streamed_coinc = (long int *)malloc((((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2)) * file_block_size * sizeof(long int));
 
 	// Copy output vector from GPU buffer to host memory.
-	cudaStatus = cudaMemcpy(streamed_numer, (gpu_data).numer_gpu, (2 * (max_bin)+1) * (2 * (max_bin)+1) * file_block_size * sizeof(long int), cudaMemcpyDeviceToHost);
+	cudaStatus = cudaMemcpy(streamed_coinc, (gpu_data).coinc_gpu, (((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2)) * file_block_size * sizeof(long int), cudaMemcpyDeviceToHost);
 	if (cudaStatus != cudaSuccess) {
 		mexPrintf("cudaMemcpy failed!\n");
-		free(streamed_numer);
+		free(streamed_coinc);
 		goto Error;
 	}
 	//Collapse streamed numerator down to regular numerator
 	for (int i = 0; i < file_block_size; i++) {
-		for (int j = 0; j < (2 * (max_bin)+1); j++) {
-			for (int k = 0; k < (2 * (max_bin)+1); k++) {
-				numer[j + k * (2 * (max_bin)+1)] += streamed_numer[j + k * (2 * (max_bin)+1) + i * (2 * (max_bin)+1) * (2 * (max_bin)+1)];
+		for (int j = 0; j < (((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2)); j++) {
+			if (j < ((2 * (max_bin)+1) * (2 * (max_bin)+1))) {
+				numer[j] += streamed_coinc[j + i * (((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2))];
+			}
+			else {
+				denom[0] += streamed_coinc[j + i * (((2 * (max_bin)+1) * (2 * (max_bin)+1)) + (*max_pulse_distance * 2) * (*max_pulse_distance * 2))];
 			}
 		}
 	}
 
-	free(streamed_numer);
-
-	//This is to pull the streamed denominator off the GPU
-	//Streamed numerator refers to the way the numerator is stored on the GPU where each GPU stream has a seperate numerator
-	long int *streamed_denom;
-	streamed_denom = (long int *)malloc((2 * (*max_pulse_distance)+1) * (2 * (*max_pulse_distance)+1) * file_block_size * sizeof(long int));
-
-	// Copy output vector from GPU buffer to host memory.
-	cudaStatus = cudaMemcpy(streamed_denom, (gpu_data).denom_gpu, (2 * (*max_pulse_distance)+1) * (2 * (*max_pulse_distance)+1) * file_block_size * sizeof(long int), cudaMemcpyDeviceToHost);
-	if (cudaStatus != cudaSuccess) {
-		mexPrintf("cudaMemcpy failed!\n");
-		free(streamed_denom);
-		goto Error;
-	}
-	//Collapse streamed denominator down to regular denominator
-	for (int i = 0; i < (2 * (*max_pulse_distance) + 1) * (2 * (*max_pulse_distance) + 1) * file_block_size; i++) {
-		denom[0] += streamed_denom[i];
-	}
-
-	free(streamed_denom);
+	free(streamed_coinc);
 
 	//Free filenames we malloc'd earlier
 	for (int i = 0; i < total_num_files; i++) {
@@ -772,7 +756,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	}
 
 Error:
-	cudaFree((gpu_data.numer_gpu));
+	cudaFree((gpu_data.coinc_gpu));
 	cudaFree((gpu_data.offset_gpu));
 	cudaFree((gpu_data.max_bin_gpu));
 	cudaFree((gpu_data.pulse_spacing_gpu));

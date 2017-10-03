@@ -145,10 +145,10 @@ void calculateCoincidences(std::vector<long long int*> *photon_bins, std::vector
 							//Loop until we hit the end of one of our vectors
 							while ((i < (*photon_bins_length)[channel_1]) && (j < (*photon_bins_length)[channel_2]) & (k < (*photon_bins_length)[channel_3])) {
 								//Check if the bin shift will cause an undeflow and increment till it does not
-								if ((pulse_shift_1 > (*photon_bins)[channel_2][j]) && (pulse_shift_1 > 0)) {
+								if ((pulse_shift_1 * (*pulse_spacing) > (*photon_bins)[channel_2][j]) && (pulse_shift_1 > 0)) {
 									j++;
 								}
-								else if ((pulse_shift_2 > (*photon_bins)[channel_3][k]) && (pulse_shift_2 > 0)) {
+								else if ((pulse_shift_2 * (*pulse_spacing) > (*photon_bins)[channel_3][k]) && (pulse_shift_2 > 0)) {
 									k++;
 								}
 								else if (((*photon_bins)[channel_1][i] < (*max_bin + *max_pulse_distance * *pulse_spacing + start_and_end_clocks[0])) || ((*photon_bins)[channel_1][i] > (start_and_end_clocks[1] - (*max_bin + *max_pulse_distance * *pulse_spacing)))) {
@@ -158,7 +158,7 @@ void calculateCoincidences(std::vector<long long int*> *photon_bins, std::vector
 								else {
 									//Abuse the fact that each vector is chronologically ordered to help find common elements quickly
 									//Check if we have a coincidence
-									if (((*photon_bins)[channel_1][i] == ((*photon_bins)[channel_2][j] - pulse_shift_1)) && ((*photon_bins)[channel_1][i] == ((*photon_bins)[channel_3][k] - pulse_shift_2))) {
+									if (((*photon_bins)[channel_1][i] == ((*photon_bins)[channel_2][j] - pulse_shift_1 * (*pulse_spacing))) && ((*photon_bins)[channel_1][i] == ((*photon_bins)[channel_3][k] - pulse_shift_2 * (*pulse_spacing)))) {
 										//See if there are duplicate elements that hold extra coincidences
 										int duplicate_chan_1 = 1;
 										int duplicate_chan_2 = 1;
@@ -209,20 +209,20 @@ void calculateCoincidences(std::vector<long long int*> *photon_bins, std::vector
 									//Else try and figure out which vector is lagging and increment its pointer
 									//First check if channel 1 is smaller (or equal) than channel 2
 									// c1 <= c2
-									else if ((*photon_bins)[channel_1][i] <= ((*photon_bins)[channel_2][j] - pulse_shift_1)) {
+									else if ((*photon_bins)[channel_1][i] <= ((*photon_bins)[channel_2][j] - pulse_shift_1 * (*pulse_spacing))) {
 										//Then check if channel 1 is the smallest
 										// c1 <= c2 & c1 < c3
-										if ((*photon_bins)[channel_1][i] < ((*photon_bins)[channel_3][k] - pulse_shift_2)) {
+										if ((*photon_bins)[channel_1][i] < ((*photon_bins)[channel_3][k] - pulse_shift_2 * (*pulse_spacing))) {
 											i++;
 										}
 										//Channel 3 is smallest
 										// c3 < c1 <= c2
-										else if ((*photon_bins)[channel_1][i] > ((*photon_bins)[channel_3][k] - pulse_shift_2)) {
+										else if ((*photon_bins)[channel_1][i] > ((*photon_bins)[channel_3][k] - pulse_shift_2 * (*pulse_spacing))) {
 											k++;
 										}
 										// Remember if c1 = c2 = c3 code doesn't reach here so we don't worry about the possibility that c1 = c2
 										// c1 = c3 < c2
-										else if ((*photon_bins)[channel_1][i] == ((*photon_bins)[channel_3][k] - pulse_shift_2)) {
+										else if ((*photon_bins)[channel_1][i] == ((*photon_bins)[channel_3][k] - pulse_shift_2 * (*pulse_spacing))) {
 											i++;
 											k++;
 										}
@@ -231,17 +231,17 @@ void calculateCoincidences(std::vector<long long int*> *photon_bins, std::vector
 									else {
 										//Channel 2 is smallest
 										// c2 < c1, c3
-										if (((*photon_bins)[channel_2][j] - pulse_shift_1) < ((*photon_bins)[channel_3][k] - pulse_shift_2)) {
+										if (((*photon_bins)[channel_2][j] - pulse_shift_1 * (*pulse_spacing)) < ((*photon_bins)[channel_3][k] - pulse_shift_2 * (*pulse_spacing))) {
 											j++;
 										}
 										//Channel 3 is smallest
 										// c3 < c2 < c1
-										else if (((*photon_bins)[channel_2][j] - pulse_shift_1) > ((*photon_bins)[channel_3][k] - pulse_shift_2)) {
+										else if (((*photon_bins)[channel_2][j] - pulse_shift_1 * (*pulse_spacing)) > ((*photon_bins)[channel_3][k] - pulse_shift_2 * (*pulse_spacing))) {
 											k++;
 										}
 										//Channel 2 and Channel 3 are equal
 										// c2 = c3 < c1
-										else if (((*photon_bins)[channel_2][j] - pulse_shift_1) == ((*photon_bins)[channel_3][k] - pulse_shift_2)) {
+										else if (((*photon_bins)[channel_2][j] - pulse_shift_1 * (*pulse_spacing)) == ((*photon_bins)[channel_3][k] - pulse_shift_2 * (*pulse_spacing))) {
 											j++;
 											k++;
 										}
