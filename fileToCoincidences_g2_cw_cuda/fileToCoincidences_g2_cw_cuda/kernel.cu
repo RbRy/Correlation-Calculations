@@ -599,7 +599,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 				}
 			}
 		}
-
+		mexPrintf("Finished block %i/%i\n", block_num + 1, blocks_req);
+		mexEvalString("pause(.0001);");
 	}
 
 	// cudaDeviceSynchronize waits for the kernel to finish, and returns

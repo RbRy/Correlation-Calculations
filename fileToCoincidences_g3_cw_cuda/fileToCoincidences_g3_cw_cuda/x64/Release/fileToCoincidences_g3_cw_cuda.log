@@ -38,12 +38,12 @@ C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3
 C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(453): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
 C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(456): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
 C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(613): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(758): warning C4533: initialization of 'cuda_blocks_denom' is skipped by 'goto Error'
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(760): warning C4533: initialization of 'cuda_blocks_denom' is skipped by 'goto Error'
   C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(581): note: see declaration of 'cuda_blocks_denom'
-  C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(758): note: see declaration of 'Error'
-C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(758): warning C4533: initialization of 'cuda_threads_denom' is skipped by 'goto Error'
+  C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(760): note: see declaration of 'Error'
+C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(760): warning C4533: initialization of 'cuda_threads_denom' is skipped by 'goto Error'
   C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(580): note: see declaration of 'cuda_threads_denom'
-  C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(758): note: see declaration of 'Error'
+  C:/Users/Ryd Berg/Documents/GitHub/correlationCalculations/fileToCoincidences_g3_cw_cuda/fileToCoincidences_g3_cw_cuda/kernel.cu(760): note: see declaration of 'Error'
      Creating library C:\Users\Ryd Berg\Documents\GitHub\correlationCalculations\fileToCoincidences_g3_cw_cuda\x64\Release\fileToCoincidences_g3_cw_cuda.lib and object C:\Users\Ryd Berg\Documents\GitHub\correlationCalculations\fileToCoincidences_g3_cw_cuda\x64\Release\fileToCoincidences_g3_cw_cuda.exp
   LINK : /LTCG specified but no code generation required; remove /LTCG from the link command line to improve linker performance
 libszip.lib(rice.obj) : warning LNK4099: PDB 'libszip.pdb' was not found with 'libszip.lib(rice.obj)' or at 'C:\Users\Ryd Berg\Documents\GitHub\correlationCalculations\fileToCoincidences_g3_cw_cuda\x64\Release\libszip.pdb'; linking object as if no debug info
