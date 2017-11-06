@@ -299,18 +299,18 @@ void sortTags(shotData *shot_data) {
 }
 
 void tagsToBins(shotData *shot_data, double bin_width) {
-	double norm_bin_width = bin_width / tagger_resolution;
+	int tagger_bins_per_bin_width = (int)round(bin_width / tagger_resolution);
 	#pragma omp parallel for
 	for (int channel = 0; channel < shot_data->sorted_photon_bins.size(); channel++) {
 		#pragma omp parallel for
 		for (int i = 0; i < shot_data->sorted_photon_tag_pointers[channel]; i++) {
-			shot_data->sorted_photon_bins[channel][i] = (long int)ceil(double(shot_data->sorted_photon_tags[channel][i] / norm_bin_width));
+			shot_data->sorted_photon_bins[channel][i] = shot_data->sorted_photon_tags[channel][i] / tagger_bins_per_bin_width;
 		}
 	}
 	for (int slope = 0; slope <= 1; slope++) {
 		#pragma omp parallel for
 		for (int i = 0; i < shot_data->sorted_clock_tag_pointers[slope]; i++) {
-			shot_data->sorted_clock_bins[slope][i] = (long int)ceil(double(shot_data->sorted_clock_tags[slope][i] / norm_bin_width));
+			shot_data->sorted_clock_bins[slope][i] = shot_data->sorted_clock_tags[slope][i] / tagger_bins_per_bin_width;
 		}
 	}
 }
