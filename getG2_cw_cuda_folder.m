@@ -1,4 +1,4 @@
-function [ g2, tau , tot_numer, tot_denom] = getG2_cw_cuda_file( bin_width, max_time)
+function getG2_cw_cuda_folder(bin_width, max_time,folder_name,mat_name)
     %%For use with non-pulsed data taking
     num_gpu = 2;
     tagger_resolution = 82.3e-12;
@@ -11,8 +11,6 @@ function [ g2, tau , tot_numer, tot_denom] = getG2_cw_cuda_file( bin_width, max_
     
     max_bin = int32(round(tagger_max_time/tagger_bin_width));
     max_pulse_distance = int32(4);
-    %Get directory of files
-    folder_name = uigetdir;
     %Get all h5 files in folder
     file_struct = dir(sprintf('%s\\*.h5',folder_name));
     filelist = cell(length(file_struct),1);
@@ -39,5 +37,8 @@ function [ g2, tau , tot_numer, tot_denom] = getG2_cw_cuda_file( bin_width, max_
     g2 = double(max_pulse_distance) * 2 * double(tot_numer)./double(tot_denom);
     tau = [-tagger_max_time:tagger_bin_width:tagger_max_time];
     clear fileToCoincidences_g2_cw_cuda;
+    
+    save(mat_name,'tau','tot_numer','tot_denom','g2');
+    
 end
 
