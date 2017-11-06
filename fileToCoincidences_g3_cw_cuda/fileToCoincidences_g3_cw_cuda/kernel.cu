@@ -426,6 +426,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	pulse_spacing = (double *)mxGetData(prhs[3]);
 	int *max_pulse_distance;
 	max_pulse_distance = (int *)mxGetData(prhs[4]);
+	int *cuda_device_number;
+	cuda_device_number = (int *)mxGetData(prhs[5]);
 
 	printf("Bin width\t%fµs\t%fns\t%fµs\t%i\n", *max_time * 1e6, *bin_width * 1e9, *pulse_spacing * 1e6, *max_pulse_distance);
 
@@ -457,6 +459,12 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	}
 	printf("Processing %i files in %i blocks\n", total_num_files, blocks_req);
 
+	cudaError_t cudaStatus = cudaSetDevice(*cuda_device_number);
+	if (cudaStatus != cudaSuccess) {
+		mexPrintf("cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
+		goto Error;
+	}
+
 	//Pointers for our various pinned memory for host-GPU DMA
 	long int* pinned_photon_bins;
 	long int* pinned_start_and_end_clocks;
@@ -465,11 +473,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrgs, const mxArray* prhs[]) {
 	cudaMallocHost((long int**)&pinned_start_and_end_clocks, 2 * file_block_size * sizeof(long int));
 	cudaMallocHost((int**)&pinned_photon_bins_length, max_channels * file_block_size * sizeof(int));
 
-	cudaError_t cudaStatus = cudaSetDevice(0);
-	if (cudaStatus != cudaSuccess) {
-		mexPrintf("cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
-		goto Error;
-	}
 	//Load some stuff to the GPU we will use permenantly
 	//Allocate memory on GPU for various things
 	gpuData gpu_data;
